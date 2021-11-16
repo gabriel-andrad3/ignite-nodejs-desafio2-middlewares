@@ -8,21 +8,76 @@ app.use(express.json());
 app.use(cors());
 
 const users = [];
+const freePlanMaxTodos = 10
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  
+  const user = users.find((user) => user.username == username)
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found!'})
+  }
+
+  request.user = user
+
+  return next()
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request
+
+  if (!user.pro) {
+    const userFreePlanAtMaxTodos = user.todos.length === freePlanMaxTodos
+    
+    if (userFreePlanAtMaxTodos) {
+      return response.status(403).json({ error: "Free plan can't exceed 10 todos." });
+    }
+  }
+
+  return next()
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  const { id } = request.params
+  
+  const user = users.find((user) => user.username == username)
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found!'})
+  }
+
+  const idIsUuid = validate(id)
+
+  if (!idIsUuid) {
+    return response.status(400).json({ error: "Incorrect id format" });
+  }
+
+  const todoFound = user.todos.find((todo) => todo.id === id)
+
+  if (!todoFound) {
+    return response.status(404).json({ error: "Id doesn't exists for user" });
+  }
+
+  request.todo = todoFound
+  request.user = user
+
+  return next()
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params
+  
+  const user = users.find((user) => user.id == id)
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found!'})
+  }
+
+  request.user = user
+
+  return next()
 }
 
 app.post('/users', (request, response) => {
